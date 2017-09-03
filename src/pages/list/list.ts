@@ -9,12 +9,16 @@ import {
 } from "ionic-angular";
 import { Storage } from "@ionic/storage";
 import { RoadMap } from "../map/map";
-
+import { Geolocation } from "@ionic-native/geolocation";
 import { AngularFireAuth } from "angularfire2/auth";
 import {
   AngularFireDatabase,
   FirebaseListObservable
 } from "angularfire2/database";
+import {DatabaseserviceProvider} from "../../providers/databaseservice/databaseservice";
+
+declare var google, navigator;
+//idle, intrip, request
 
 @Component({
   selector: "page-list",
@@ -26,88 +30,11 @@ export class ListPage {
   latLng;
   lat;
   long;
-  user;
-  passengers: Array<{
-    name: string;
-    distance: string;
-    time: string;
-    id: string;
-    status: string;
-  }>;
-  people = [
-    {
-      name: "Yuki",
-      distance: 5,
-      time: "15 mins",
-      id: "43455654",
-      status: "body",
-      lat: 18.004,
-      long: -76.856,
-      phone: "876-432-1348",
-      destLat: 18.0032,
-      destLong: -76.7452
-    },
-    {
-      name: "Mira",
-      distance: 2,
-      time: "5 mins",
-      id: "4929433",
-      status: "body",
-      lat: 18.0032,
-      long: -76.7452,
-      phone: "876-892-4371",
-      destLat: 18.004,
-      destLong: -76.856
-    },
-    {
-      name: "Jace",
-      distance: 13,
-      time: "53 min",
-      id: "3433434",
-      status: "body",
-      lat: 18.0187,
-      long: -76.7445,
-      phone: "876-398-1968",
-      destLat: 18.004,
-      destLong: -76.856
-    },
-    {
-      name: "Suna",
-      distance: "74",
-      time: "1 hr 13 mins",
-      id: "5342545",
-      status: "body",
-      lat: 17.9422,
-      long: -77.2333,
-      phone: "876-239-1072",
-      destLat: 18.004,
-      destLong: -76.856
-    },
-    {
-      name: "Hugh",
-      distance: 0.7,
-      time: "2 mins",
-      id: "43434641",
-      status: "body",
-      lat: 18.0213,
-      long: -76.7692,
-      phone: "876-438-9431",
-      destLat: 18.004,
-      destLong: -76.856
-    },
-    {
-      name: "Sarah",
-      distance: 0.7,
-      time: "2 mins",
-      id: "43434641",
-      status: "body",
-      lat: 18.0145092,
-      long: -76.7504757,
-      phone: "876-438-9431",
-      destLat: 18.0032,
-      destLong: -76.7452
-    }
-  ];
+  user: any;
+  empty = false;
+  passengers: Array<any> = [];
+  people : FirebaseListObservable<any>;
+
   constructor(
     public navCtrl: NavController,
     public navParams: NavParams,
@@ -117,19 +44,46 @@ export class ListPage {
     public load: LoadingController,
     public alertCtrl: AlertController,
     public auth: AngularFireAuth,
-    public angularDB: AngularFireDatabase
-  ) {
+    public angularDB: AngularFireDatabase,
+    public geolocation: Geolocation,
+    public db: DatabaseserviceProvider
+    ) {
     // If we navigated to this page, we will have an item available as a nav param
     menu.swipeEnable(false);
 
     //this.user = this.auth.auth.currentUser// temp
     this.auth.auth.onAuthStateChanged(user => {
-      if (user != null) this.user = user;
+      
+      if (user != null) {
+        this.people = this.db.publiclistAccounts();
+        
+      /**  this.user = user.uid;
+        this.angularDB
+        .list("/drivers/" + user.uid + "/requests", {
+          preserveSnapshot: true
+        })
+        .subscribe(snapshots => {
+          this.people = [];
+          snapshots.forEach(snapshot => {
+            console.log(snapshot.key, snapshot.val());
+            let person = snapshot.val();
+            person.key = snapshot.key;
+            person.status= "body";
+            this.angularDB.object("/passengers/" + snapshot.key).subscribe(result =>{
+              person.name = result.name;
+            }), error =>{ console.log(error);
+              this.toasting(error.error + "....." + error)
+
+            };
+            this.people.push(person);
+          }), error =>{ console.log(error)
+          this.toasting(error.error + "....." + error)};;
+        }), error =>{ console.log(error)
+          this.toasting(error.error + "....." + error)};;*/
+        
+      }
     });
 
-    this.people.sort(this.sortpeople);
-
-    this.passengers = [];
     //Checks if the app was exited before a trip was finished
     this.storage.get("previous").then(val => {
       if (val) {
@@ -140,32 +94,14 @@ export class ListPage {
     });
   }
 
-  //For testing
-  current() {
-    if (this.user != null) {
-      console.log(this.user.email);
-      let alert = this.alertCtrl.create({
-        title: "JSON",
-        subTitle: this.user.email
-      });
-      alert.present();
-    } else {
-      console.log("No user");
-      let alert = this.alertCtrl.create({
-        title: "JSON",
-        subTitle: "No user"
-      });
-      alert.present();
-    }
-  }
-
   //Selects or deselect a user to pickup on the next rip
   personTapped(event, person) {
+    console.log(person.key, person.pickUpLat, person.pickUpLng);
     if (person.status == "body") {
       person.status = "car";
       this.passengers.push(person);
-      this.passengers.sort(this.sortpeople);
-      console.log(this.passengers[0].distance);
+      //this.distTime(person)
+      //this.passengers.sort(this.sortpeople);
 
       //this.alerts();
     } else {
@@ -174,7 +110,6 @@ export class ListPage {
       if (this.passengers[0] == null) console.log("empty");
       else {
         this.passengers.sort(this.sortpeople);
-        console.log(this.passengers[0].distance);
       }
     }
   }
@@ -188,12 +123,12 @@ export class ListPage {
   }
 
   //When a user request has been accepted they are removed from the request list
-  removePerson(person) {
+  /** removePerson(person) {
     var index = this.people.indexOf(person, 0);
     if (index > -1) {
       this.people.splice(index, 1);
     }
-  }
+  }*/
 
   //Sorts list by passengers distance from driver
   sortpeople(pass1, pass2) {
@@ -208,7 +143,7 @@ export class ListPage {
       this.toasting("Ready to go!");
       let decision = this.passengers;
       this.passengers.forEach(person => {
-        this.removePerson(person);
+        this.angularDB.object('/drivers/'+this.user+'/requests/'+person.key).update({status:'Accept'})
       });
       this.passengers = [];
       this.storage.set("previous", true);
@@ -231,22 +166,22 @@ export class ListPage {
     let confirm = this.alertCtrl.create({
       title: "Previous Trip?",
       message:
-        "A previous trip has been detected. Would you like to continue it?",
+      "A previous trip has been detected. Would you like to continue it?",
       buttons: [
-        {
-          text: "Yes",
-          handler: () => {
-            this.navCtrl.push(RoadMap, { passengers: data });
-            console.log("Disagree clicked");
-          }
-        },
-        {
-          text: "No",
-          handler: () => {
-            this.storage.set("previous", false);
-            console.log("No");
-          }
+      {
+        text: "Yes",
+        handler: () => {
+          this.navCtrl.push(RoadMap, { passengers: data });
+          console.log("Disagree clicked");
         }
+      },
+      {
+        text: "No",
+        handler: () => {
+          this.storage.set("previous", false);
+          console.log("No");
+        }
+      }
       ]
     });
     confirm.present();
@@ -264,7 +199,43 @@ export class ListPage {
   }
 
   locate() {
-    let data = { latitude: -57, longitude: 21 };
-    this.angularDB.object("/drivers/" + this.user.uid).update(data);
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        this.latLng = new google.maps.LatLng(
+          position.coords.latitude,
+          position.coords.longitude
+          );
+        let data = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+        this.angularDB.object("/drivers/" + this.user.uid).update(data);
+      },
+      err => {
+        console.log(err);
+      }
+      );
+  }
+
+  distTime(passenger) {
+    let service = new google.maps.DistanceMatrixService();
+    this.locate();
+    let lt = 0 + passenger.pickUpLat;
+    let lg = 0 + passenger.pickUpLng;
+    console.log(lt, lg);
+    service.getDistanceMatrix(
+    {
+      origins: [this.latLng],
+      destinations: [
+      new google.maps.LatLng(18.05, -76.5 )
+      ],
+      travelMode: "DRIVING"
+    },
+    this.callback
+    );
+  }
+  callback(response, status) {
+    console.log(response.rows[0].elements[0].distance.text);
+    console.log(response.rows[0].elements[0].duration.text);
   }
 }

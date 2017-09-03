@@ -53,6 +53,7 @@ export class RoadMap {
   pickup;
   user;
 
+
   constructor(
     public navCtrl: NavController,
     public platform: Platform,
@@ -90,11 +91,12 @@ export class RoadMap {
           position.coords.longitude
         ); //Sets gps coordinates to variable
         this.currentLatLng = this.latLng;
+        console.log(this.currentLatLng);
         console.log(
           "" + position.coords.longitude + ":..." + position.coords.latitude
         );
         let mapOptions = {
-          center: this.latLng,
+          center: this.currentLatLng,
           zoom: 15,
           mpTypeId: google.maps.MapTypeId.ROADMAP
         };
@@ -125,15 +127,15 @@ export class RoadMap {
     this.passengers = this.params.get("passengers");
     let last = this.passengers.length - 1;
     this.destination = new google.maps.LatLng(
-      this.passengers[last].lat,
-      this.passengers[last].long
+      this.passengers[last].pickUpLat,
+      this.passengers[last].pickUpLng
     );
 
     for (let x = 0; x < last; x++) {
       this.waypoints.push({
         location: new google.maps.LatLng(
-          this.passengers[x].lat,
-          this.passengers[x].long
+          this.passengers[x].pickUpLat,
+          this.passengers[x].pickUpLng
         ),
         stopover: true
       });
@@ -145,15 +147,15 @@ export class RoadMap {
   passengerDestination() {
     let last = this.passengers.length - 1;
     this.destination = new google.maps.LatLng(
-      this.passengers[last].destLat,
-      this.passengers[last].destLong
+      this.passengers[last].dropoffLat,
+      this.passengers[last].dropoffLng
     );
 
     for (let x = 0; x < last; x++) {
       this.waypoints.push({
         location: new google.maps.LatLng(
-          this.passengers[x].destLat,
-          this.passengers[x].destLong
+          this.passengers[x].dropoffLat,
+          this.passengers[x].dropoffLng
         ),
         stopover: true
       });
@@ -193,8 +195,8 @@ export class RoadMap {
         origins: [this.latLng],
         destinations: [
           new google.maps.LatLng(
-            this.passengers[passenger].lat,
-            this.passengers[passenger].long
+            this.passengers[passenger].pickUpLat,
+            this.passengers[passenger].pickUpLng
           )
         ],
         travelMode: "DRIVING"
@@ -291,10 +293,10 @@ export class RoadMap {
   directions(passenger) {
     let dest = null;
     if (this.pickup){
-      dest =  new google.maps.LatLng(this.passengers[passenger].lat,this.passengers[passenger].long)
+      dest =  new google.maps.LatLng(this.passengers[passenger].pickUpLat,this.passengers[passenger].pickUpLng)
     }
     else
-      dest =  new google.maps.LatLng(this.passengers[passenger].destLat,this.passengers[passenger].destLong)
+      dest =  new google.maps.LatLng(this.passengers[passenger].dropoffLat,this.passengers[passenger].dropoffLng)
 
     let request = {
       origin: this.currentLatLng,
@@ -373,7 +375,7 @@ export class RoadMap {
     //Notifies user that they are at the last step of the leg
     let confirm = this.alertCtrl.create({
       title: "Pick up confirmation",
-      message: "Confirm when passenger has been pickd up",
+      message: "Confirm when passenger has been picked up",
       buttons: [
         {
           text: "Yes",

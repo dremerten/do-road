@@ -5,7 +5,7 @@
     <ion-icon name="menu"></ion-icon>
   </button>
   <ion-title>
-    Charter Requests
+    Charter Request
   </ion-title>
 </ion-navbar>
 </ion-header>
@@ -23,23 +23,30 @@
         <ion-icon name="close-circle"></ion-icon>
       </button>
     </ion-fab>
-    <div>Name: {{person.name}}</div>
-    <div>Model: {{person.phone}}</div>
+    <div>Pickup: {{person.pickUpLat}}, {{person.pickUpLng}}</div>
+    <div>Dropoff: {{person.dropoffLat}}, {{person.dropoffLng}}</div>
+  </ion-card-content>
+
+</ion-card>
+
+  <ion-card *ngIf="empty">
+
+
+    <ion-card-content>
+    <h1>No Passengers</h1>
   </ion-card-content>
 
 </ion-card>
 
 <ion-list>
-  <button ion-item *ngFor="let person of people" (click)="personTapped($event, person)" (press)="details($event,person)">
-    <ion-icon [name]="person.status" item-left></ion-icon>
-    {{person.name}}
-    <div class="item-note" item-right>
-      {{person.distance}}km
-    </div>
+  <button ion-item *ngFor="let person of people | async" (click)="personTapped($event, person)" (press)="details($event,person)">
+   <!-- <ion-icon [name]="person.status" item-left></ion-icon>-->
+    {{person.driverId}}
+    
   </button>
 </ion-list>
 <button ion-button clear (click)='confirm()'>Confirm</button>
-<!--<button ion-button (click)='current()' clear icon-rigth> Current </button>  For testing-->
+
 <!--<button ion-button (click)='locate()' clear icon-rigth> Locate </button>  For testing-->
  <!-- <div *ngIf="selectedItem" padding>
     You navigated here from <b>{{selectedItem.title}}</b>
