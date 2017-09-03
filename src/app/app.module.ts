@@ -33,14 +33,16 @@ import { Push } from "@ionic-native/push";
 import { AngularFireModule } from "angularfire2";
 import { AngularFireDatabaseModule } from 'angularfire2/database';
 import { AngularFireAuthModule } from 'angularfire2/auth';
+import { DatabaseserviceProvider } from '../providers/databaseservice/databaseservice';
 
 export const firebaseConfig = {
-    apiKey: "AIzaSyB1PE4qVbbm_M074r7NYEclphW_4hPG_X8",
+   apiKey: "AIzaSyB1PE4qVbbm_M074r7NYEclphW_4hPG_X8",
     authDomain: "calico-doroad.firebaseapp.com",
     databaseURL: "https://calico-doroad.firebaseio.com",
     storageBucket: "calico-doroad.appspot.com",
     messagingSenderId: "552647789390"
-};
+    
+   };
 
 @NgModule({
     declarations: [
@@ -100,7 +102,8 @@ export const firebaseConfig = {
     NativeStorage,
     Network,
     Push,
-    { provide: ErrorHandler, useClass: IonicErrorHandler }
+    { provide: ErrorHandler, useClass: IonicErrorHandler },
+    DatabaseserviceProvider
     ]
 })
 export class AppModule {}
