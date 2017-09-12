@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <android.support.v7.widget.RecyclerView
+        android:paddingTop="8dp"
+        android:id="@+id/requestList"
+        android:scrollbars="vertical"
+        android:layout_width="fill_parent"
+        tools:listitem="@layout/list_request_item"
+        android:layout_height="fill_parent" />
+
+</RelativeLayout>
